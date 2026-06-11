@@ -29,10 +29,13 @@ claude
 
 ## ステータス
 
-🚧 **v1 — 最小カーネル。** `make` ステップの順次実行・機械ゲート（exists / sections）・seized 停止まで実装済み。
-チェックポイント再開（Phase 2）、maker-checker レビューループ（Phase 3）、分岐・反復（Phase 4）は開発中。
+🚧 **v5。** 実装済み: `make` / `make-check`（maker-checker レビューループ）/ `branch` / `loop` の
+4 ステップタイプ、機械ゲート 5 種、チェックポイント再開（ステップ単位 + 行単位）、
+熔断（max_rounds / max_laps / max_returns）、フロー目的の全エージェント共有（goal）、
+臨時質問（ask）。実ワークロードでの検証は進行中。
 
-最初の実用ユースケースは [legacy-migration-skills](https://github.com/KIKAIKAYA/legacy-migration-skills)（レガシー現状調査の自動化）です。
+最初の実用ユースケースは [migration-factory](https://github.com/KIKAIKAYA/migration-factory) の
+survey-unit（レガシー現状調査の自動化）です。
 
 ## License
 
