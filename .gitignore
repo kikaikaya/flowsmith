@@ -1,0 +1,8 @@
+# 実行時生成物
+flowsmith-out/
+
+# OS / Editor
+Thumbs.db
+.DS_Store
+.idea/
+.vscode/

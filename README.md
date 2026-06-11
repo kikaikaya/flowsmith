@@ -12,9 +12,26 @@ AI エージェントのワークフローを **1 つの YAML** で宣言し、*
 - **行き詰まったら止まる** — 解析不能・再試行上限超過は推測で進まず停止し、人間に裁定を返す
 - **コスト可観測** — ステップごとの所要時間・トークンをログに残す
 
+## Quick Start
+
+```bash
+# 1. インストール（skills/ を ~/.claude/skills/ にコピー、またはプラグインとして導入）
+
+# 2. リポジトリのルートで Claude Code を起動し、サンプルフローを実行
+claude
+> /flowsmith-run examples/hello/flow.yaml
+```
+
+2 ステップの最小フロー（ファイル一覧の作成 → サマリー生成）が順に実行され、
+成果物が `flowsmith-out/` に出力されます。
+
+フロー定義の書き方は [docs/schema.md](docs/schema.md) を参照。
+
 ## ステータス
 
-🚧 **設計フェーズ。** フロー定義の schema 草案は [docs/schema.md](docs/schema.md)。
+🚧 **v1 — 最小カーネル。** `make` ステップの順次実行・機械ゲート（exists / sections）・seized 停止まで実装済み。
+チェックポイント再開（Phase 2）、maker-checker レビューループ（Phase 3）、分岐・反復（Phase 4）は開発中。
+
 最初の実用ユースケースは [legacy-migration-skills](https://github.com/KIKAIKAYA/legacy-migration-skills)（レガシー現状調査の自動化）です。
 
 ## License

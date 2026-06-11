@@ -14,7 +14,7 @@ flow:
 
 paths:                        # パス変数（ファイル内で ${VAR} 参照）
   SRC: ./target-repo
-  OUT: ./flowsmith-out
+  OUT: ./flowsmith-out        # OUT は予約変数・必須（成果物と実行時ファイルの置き場）
 
 defaults:                     # 全ステップ共通のデフォルト
   max_rounds: 3               # make-check の再試行上限

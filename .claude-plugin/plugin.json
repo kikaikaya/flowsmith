@@ -1,0 +1,8 @@
+{
+  "name": "flowsmith",
+  "description": "AIワークフローを1つのYAMLで宣言し、中断しても続きから動かすオーケストレーションSkill",
+  "version": "0.1.0",
+  "author": {
+    "name": "kikaikaya"
+  }
+}

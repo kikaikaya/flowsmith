@@ -1,0 +1,46 @@
+# flowsmith 動作確認用の最小フロー（2 ステップ）
+# 実行: リポジトリのルートで /flowsmith-run examples/hello/flow.yaml
+
+flow:
+  id: hello
+  name: ハローフロー（動作確認用）
+  version: 1
+
+paths:
+  SRC: .
+  OUT: ./flowsmith-out
+
+steps:
+  - id: inventory
+    type: make
+    title: ファイル一覧の作成
+    brief: |
+      ${SRC} 直下のファイルとディレクトリを調べ（.git と flowsmith-out は除外）、
+      見出し「## ファイル一覧」の下に Markdown の表（パス / 種別 / 概要1行）としてまとめる。
+    inputs:
+      - id: target
+        path: ${SRC}/
+        note: 調査対象のルート
+    outputs:
+      - id: file_list
+        path: ${OUT}/01-files.md
+    gates:
+      - exists: ${OUT}/01-files.md
+      - sections: ["ファイル一覧"]
+
+  - id: digest
+    type: make
+    title: サマリー作成
+    brief: |
+      ファイル一覧を読み、このリポジトリが何のプロジェクトかを推定して、
+      見出し「## サマリー」の下に 5 行以内の日本語で要約する。
+    inputs:
+      - id: file_list
+        path: ${OUT}/01-files.md
+        note: 前ステップの成果物
+    outputs:
+      - id: summary
+        path: ${OUT}/02-summary.md
+    gates:
+      - exists: ${OUT}/02-summary.md
+      - sections: ["サマリー"]
