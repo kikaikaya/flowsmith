@@ -44,10 +44,12 @@ ${OUT}/.flowsmith/
 
 | フィールド | 説明 |
 |------------|------|
-| `status` | `running` / `seized` / `complete` |
+| `status` | `running` / `asking` / `seized` / `complete` |
 | `completed_steps` | 完了した step id（順序どおり） |
 | `next_step` | 次に実行すべき step id |
 | `steps.{id}.foreach.done_keys` | **行単位の完了キー**。再開時はここに無い行だけ実行する |
+| `steps.{id}.qa` | 臨時質問の履歴 `[{ "q": ..., "a": ... }]`（a が null = 未回答） |
+| `steps.{id}.asks` | 当該 step の質問回数（max_asks 熔断の根拠） |
 | `seized` | seized 時のみ `{ "step": ..., "reason": ... }` |
 
 **更新タイミング**：① flow 開始時に作成 ② **各 step 完了ごと** ③ **foreach の各行完了ごと**（ここが行単位再開の根拠）④ seized 時 ⑤ 完了時にアーカイブして削除。
@@ -61,6 +63,7 @@ ${OUT}/.flowsmith/
 | 無い | 新規実行 |
 | あり・`flow_id` が今回と不一致 | **seized**（別フローの OUT を流用している。上書き事故防止） |
 | あり・`status: running` | **再開**：`completed_steps` をスキップし `next_step` から続行。foreach 中なら `done_keys` 以外の行から |
+| あり・`status: asking` | **未回答の質問を再提示**：qa の a が null の質問をユーザーに見せ、回答を得て当該 step を再派発 |
 | あり・`status: seized` | 前回の停止理由を表示したうえで、当該 step から再実行（人間が裁定済みとみなす） |
 | あり・`status: complete`（異常系） | runs/ へ退避して新規実行 |
 
@@ -87,6 +90,7 @@ ${OUT}/.flowsmith/
 | `step_start` / `step_end` | step（end は status / rounds / duration_s / agent_tokens） |
 | `row_end` | step / key / status / agent_tokens |
 | `gate_fail` | step / gates |
+| `ask` | step / questions（回答時は同 step の `answer` イベントで a を記録） |
 | `seized` | step / reason |
 | `flow_complete` | flow / total_steps / total_agent_tokens |
 
