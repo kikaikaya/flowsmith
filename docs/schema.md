@@ -11,6 +11,9 @@ flow:
   id: hello_survey            # 一意ID（ログ・state ファイル名に使用）
   name: サンプル調査フロー      # 表示名
   version: 1                  # schema バージョン
+  goal: |                     # フロー全体の目的（任意）。全エージェントに背景として共有される。
+    このフローが達成しようとしていること。
+    なぜこの作業をするのか、成果物が何に使われるのかを書く。
 
 paths:                        # パス変数（ファイル内で ${VAR} 参照）
   SRC: ./target-repo
@@ -23,7 +26,7 @@ steps:
   - id: ...                   # ステップ定義（後述）
 ```
 
-トップレベルは `flow` / `paths` / `defaults` / `steps` の 4 ブロックのみ。
+トップレベルは `flow` / `paths` / `defaults` / `steps` の 4 ブロック + オプションの `goal`。
 
 ## 2. ステップ共通フィールド
 
@@ -193,6 +196,9 @@ flow:
   id: legacy_survey
   name: レガシー現状調査
   version: 1
+  goal: |
+    PostgreSQL 移行の意思決定に必要な技術的リスクと移行工数を定量的に把握する。
+    成果物はアーキテクトと PM が移行可否・優先順位を判断するための根拠資料となる。
 
 paths:
   SRC: ./target-repo
