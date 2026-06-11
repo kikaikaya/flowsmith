@@ -1,0 +1,24 @@
+# foreach（行単位反復 + 行単位再開）の動作確認フロー
+# 実行: リポジトリのルートで /flowsmith-run examples/rows/flow.yaml
+
+flow:
+  id: rows
+  name: 行単位反復の動作確認
+  version: 1
+
+paths:
+  OUT: ./flowsmith-out
+
+steps:
+  - id: write_notes
+    type: make
+    title: アルゴリズム解説メモの作成
+    brief: |
+      担当行のアルゴリズムについて、見出し「## 解説」の下に
+      初心者向けの日本語解説を 3 行で書く。
+    foreach:
+      table: examples/rows/items.md
+      key: [ID, アルゴリズム]
+    outputs:
+      - id: note
+        path: ${OUT}/notes/
