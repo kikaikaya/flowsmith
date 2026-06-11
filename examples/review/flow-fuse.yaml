@@ -1,0 +1,33 @@
+# 熔断（max_rounds 超過 → seized + 行き詰まりサマリー）の動作確認フロー
+# 観点 V99 は意図的に満たせない基準。max_rounds: 1 なので 1 ラウンドで熔断する。
+# 実行: リポジトリのルートで /flowsmith-run examples/review/flow-fuse.yaml
+
+flow:
+  id: review_fuse
+  name: 熔断動作確認（意図的に行き詰まる）
+  version: 1
+
+paths:
+  OUT: ./flowsmith-out
+
+steps:
+  - id: impossible_doc
+    type: make-check
+    title: 熔断テスト用ドキュメント作成
+    max_rounds: 1
+    pass_when: no_high_fail
+    maker:
+      brief: |
+        見出し「## メモ」の下に、PostgreSQL の特徴を 3 行で書く。
+    checker:
+      brief: |
+        ドキュメントを検査する。
+      viewpoints:
+        - id: V99
+          severity: high
+          rule: 本文が 500 行以上ある（※熔断テスト用の意図的に満たせない基準）
+    gates:
+      - exists: ${OUT}/fuse-memo.md
+    outputs:
+      - id: memo
+        path: ${OUT}/fuse-memo.md

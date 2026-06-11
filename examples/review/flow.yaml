@@ -1,0 +1,44 @@
+# make-check（maker-checker レビューループ）の動作確認フロー
+# 実行: リポジトリのルートで /flowsmith-run examples/review/flow.yaml
+
+flow:
+  id: review_demo
+  name: maker-checker 動作確認
+  version: 1
+
+paths:
+  OUT: ./flowsmith-out
+
+steps:
+  - id: migration_checklist
+    type: make-check
+    title: DB移行チェックリスト作成
+    max_rounds: 3
+    pass_when: no_high_fail
+    maker:
+      brief: |
+        Oracle から PostgreSQL への移行で注意すべき非互換ポイントを、
+        見出し「## チェックリスト」の下に Markdown 表
+        （# / 項目 / リスク / 確認方法）で 8 項目以上まとめる。
+        「確認方法」は grep やクエリ例など具体的な手段を書くこと。
+        最後に見出し「## 未確認事項」を置く。
+    checker:
+      brief: |
+        チェックリストが実務で使える品質かを検査する。
+      viewpoints:
+        - id: V01
+          severity: high
+          rule: 表に 8 項目以上ある
+        - id: V02
+          severity: high
+          rule: 各項目の「確認方法」が具体的な手段（コマンド・クエリ・調査対象）を伴う（「確認する」だけの記述は fail）
+        - id: V03
+          severity: mid
+          rule: データ型の非互換（DATE / NUMBER / 空文字と NULL など）への言及がある
+    gates:
+      - exists: ${OUT}/checklist.md
+      - sections: ["チェックリスト", "未確認事項"]
+      - table_rows_min: 8
+    outputs:
+      - id: checklist
+        path: ${OUT}/checklist.md

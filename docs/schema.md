@@ -58,9 +58,9 @@ steps:
 |------|----------|
 | `exists: <path>` | ファイルが存在する |
 | `sections: [...]` | Markdown に指定見出しがすべて在る |
-| `min_lines: <n>` | 最低行数 |
-| `table_columns: {path_ref, count}` | 表の列数が一致 |
-| `count_match: {ref: <step.output>, tolerance}` | 上流成果物との件数照合 |
+| `min_lines: <n>` | 出力ファイルの最低行数 |
+| `table_rows_min: <n>` | 出力内の Markdown 表のデータ行数が n 以上 |
+| `count_match: {ref: <path>, tolerance: <n>}` | 出力の表のデータ行数が、参照ファイルの表の行数と一致（±tolerance） |
 
 ## 3. ステップタイプ別フィールド
 
@@ -94,6 +94,8 @@ steps:
 
 実行順は **maker → gates（機械）→ checker（LLM）→ 不合格なら指摘を渡して maker 再実行**。
 `max_rounds` 超過は次ステップへ逃さず、フロー全体を停止して「行き詰まりサマリー」を出す。
+
+**合否はエンジンが機械的に決める**：checker は観点ごとの判定（verdicts）を結果ブロックで構造化して返し、エンジンが `pass_when` を適用する。checker の自己申告の合否は使わない。レビュー表は `${OUT}/reviews/{step_id}_r{n}.md` に残る。
 
 ### 3.3 `branch` — 二者択一の判定と分岐
 
