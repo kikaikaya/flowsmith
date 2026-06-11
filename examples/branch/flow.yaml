@@ -1,0 +1,56 @@
+# branch（判定分岐 + 戻りジャンプ + carry）の動作確認フロー
+# write_memo の brief はわざと「ライセンス」に触れないため、初回判定は no になり、
+# 判定理由が carry で write_memo に引き継がれて再実行 → 2 回目で yes になる想定。
+# 実行: リポジトリのルートで /flowsmith-run examples/branch/flow.yaml
+
+flow:
+  id: branch_demo
+  name: 判定分岐の動作確認
+  version: 1
+
+paths:
+  OUT: ./flowsmith-out
+
+steps:
+  - id: write_memo
+    type: make
+    title: PostgreSQL 紹介メモの作成
+    brief: |
+      見出し「## メモ」の下に、PostgreSQL の技術的特徴を 3 点、
+      箇条書きで書く。
+    outputs:
+      - id: memo
+        path: ${OUT}/branch-memo.md
+    gates:
+      - exists: ${OUT}/branch-memo.md
+
+  - id: memo_gate
+    type: branch
+    title: メモの採用判定
+    arbiter:
+      brief: |
+        メモに「ライセンス」と商用利用の可否への言及があるか判定する。
+        言及があれば yes、なければ no。
+    uses: [write_memo]
+    route:
+      yes: publish
+      no: write_memo
+    carry:
+      to: write_memo
+      keys: [reason]
+
+  - id: publish
+    type: make
+    title: 公開用に整形
+    brief: |
+      メモを読み、見出し「## 公開版」の下に 5 行以内の紹介文に整形する。
+    inputs:
+      - id: memo
+        path: ${OUT}/branch-memo.md
+        note: 採用判定を通過したメモ
+    outputs:
+      - id: final
+        path: ${OUT}/branch-final.md
+    gates:
+      - exists: ${OUT}/branch-final.md
+      - sections: ["公開版"]

@@ -3,20 +3,21 @@ name: flowsmith-run
 description: flowsmith のフロー定義（YAML）を読み込み、ステップを順に subagent へ派発して実行するエンジン。中断後の再実行では state.json を検出して続きから再開する。「/flowsmith-run <flow.yaml>」と指定されたとき、またはフロー定義の実行・再開を頼まれたときに使う。引数はフロー定義 YAML のパス。
 ---
 
-# flowsmith 実行エンジン (v3)
+# flowsmith 実行エンジン (v4)
 
 フロー定義 YAML を受け取り、宣言されたステップを順に実行する。
 **エンジンは推測で進まない。** 解釈に迷う状況はすべて `seized`（停止・人間待ち）として報告する。
 **状態はすべてディスクに置く。** セッションが死んでもフローは死なない。
-**合否はエンジンが機械的に決める。** LLM の自己申告を合否判定に使わない。
+**合否・路由はエンジンが機械的に決める。** LLM の自己申告を合否判定に使わない。
 
-## v3 の実装範囲
+## v4 の実装範囲
 
-- ステップタイプ: `make`（foreach 行単位反復を含む）/ **`make-check`（maker-checker レビューループ）**。`branch` / `loop` は未実装（検出したら seized）
+- ステップタイプ: `make`（foreach 行単位反復）/ `make-check`（maker-checker レビューループ）/ **`branch`（二者択一の判定分岐）/ `loop`（条件付き反復）**
 - ゲート: `exists` / `sections` / `min_lines` / `table_rows_min` / `count_match`
 - 断点再開: step 単位 + foreach 行単位
 - 失敗履歴: 繰り返し FAIL する観点を再派発時に明示注入
-- 熔断: max_rounds 超過 → seized + 行き詰まりサマリー
+- 熔断: max_rounds / max_laps 超過 → seized + 行き詰まりサマリー
+- **carry: 判定理由を戻り先ステップへ引き継ぐ**
 
 ## 実行時ファイル（詳細は docs/runtime.md）
 
@@ -95,6 +96,33 @@ round = state の続き（新規なら 1）
 - 試行ラウンド数と各ラウンドの修正内容（maker の notes）
 - レビュー表のパス一覧
 - 人間への選択肢：観点を緩める / brief を直す / 成果物を手動修正して再実行
+
+### 1.3''' 実行（branch）★v4
+
+```text
+[1] arbiter 派発（雛形 D）。判定材料 = uses に列挙された上流 step の outputs と state 結果摘要
+[2] 結果ブロックの status（yes / no）と reason を取得
+[3] エンジンが route.yes / route.no で次ステップを決定（status が yes/no 以外 → 1.5 の再派発規則）
+[4] carry が定義され、かつ採られた路由先が carry.to と一致する場合：
+    reason を state の steps.{carry.to}.carried に保存。
+    次回その step を派発するとき「制御からの引き継ぎ」セクションとして注入する
+[5] state 更新（steps.{id}: status / reason）、`route` ログ（from / verdict / to）
+```
+
+**戻りジャンプの扱い**：route 先が実行済み step の場合、その step を再実行対象に戻す
+（completed_steps から外し、make-check なら rounds・fail_history は引き継ぐ）。
+
+**戻りジャンプの熔断**：branch の戻りジャンプ回数を state（steps.{id}.returns）で数え、
+`max_returns`（省略時 3）を超えたら **seized + 行き詰まりサマリー**（各回の reason 一覧）。
+無限ループは構造的に起こり得ないようにする。
+
+### 1.3'''' 実行（loop）★v4
+
+branch と同じ仕組みで、status は `done` / `again`：
+
+- `done` → route.done へ
+- `again` → route.again へ（laps += 1 を state に記録）
+- laps > `max_laps` → **熔断**: seized + 行き詰まりサマリー（各 lap の reason 一覧）
 
 ### 1.5 結果ブロックの解析
 
@@ -185,6 +213,20 @@ notes: {一行メモ}
 - {V01}
 ```
 
+**carry を受けた step の追加セクション**（state の carried がある場合）：
+
+```
+## ⚠ 差し戻し（前回の成果物は判定で不合格になった）
+不合格の理由: {carried.reason}
+
+上記の理由は「現状の説明」ではなく「解消すべき不足」である。
+既存の成果物を修正し、この不足を必ず解消すること。「変更不要」という結論は禁止。
+```
+
+> 設計メモ: 当初は「判定理由を踏まえよ」という中立的な文面だったが、実験で maker が
+> 理由文を「あるべき姿の説明」と誤読して無変更で返す事故が起きた。差し戻しであることを
+> 明示し「変更不要は禁止」と書くことで誤読を塞ぐ。
+
 **foreach の追加セクション**（結果ブロックの step は `{step_id}#{行キー}`）：
 
 ```
@@ -193,6 +235,30 @@ notes: {一行メモ}
 
 ## 出力（この行専用のパス）
 - {id}: {outputs[].path}/{正規化済み行キー}.md
+```
+
+## 派発プロンプト雛形 D（arbiter / branch・loop）★v4
+
+```
+あなたは flowsmith フローの判定担当（arbiter）です。**ファイルを変更してはいけません。判定だけを行います。**
+
+# 判定: {title}（{step_id} / {branch または loop}）
+
+## 判定基準
+{arbiter.brief}
+
+## 判定材料（Read で読むこと）
+- {uses の各 step の outputs 絶対パス}
+- {state の当該 step 結果摘要（rounds / notes 等）}
+
+## 完了時の約束（厳守）
+最終メッセージの末尾に、次の形式のフェンスブロックを必ず含めること：
+
+```flowsmith-result
+step: {step_id}
+status: {branch は yes または no / loop は done または again}
+reason: {判定理由。判定材料からの具体的根拠を 1〜3 行で。戻り先への指示になることを意識する}
+```
 ```
 
 ## 派発プロンプト雛形 C（checker）★v3

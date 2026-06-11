@@ -110,6 +110,7 @@ steps:
     route:
       yes: final_report
       no: structure                  # 戻りジャンプ = ループ構成も可
+    max_returns: 3                   # 戻りジャンプの上限（省略時 3）。超過 = seized（無限ループ防止）
     carry:                           # 戻り先に判定理由を引き継ぐ
       to: structure
       keys: [reason]
