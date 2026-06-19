@@ -13,6 +13,21 @@ steps:
   - id: report          # 仕上げ
 ```
 
+```mermaid
+flowchart TD
+  Y["1 つの YAML（steps 宣言）"] --> E["flowsmith エンジン"]
+  E --> T1["make: 生産"]
+  E --> T2["make-check: maker→ゲート→checker"]
+  E --> T3["branch: 判定して分岐"]
+  E --> T4["loop: 条件反復"]
+  T1 --> O["成果物"]
+  T2 --> O
+  T3 --> O
+  T4 --> O
+  E --> ST["state.json（断点）"]
+  ST -.->|"中断しても再開"| E
+```
+
 ## なぜ作ったか
 
 実務で AI エージェントに長い作業をさせると、毎回同じ 3 つの壁に当たります。
