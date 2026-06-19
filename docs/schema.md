@@ -197,7 +197,7 @@ flowsmith-out/
 
 ## 付録: 紙上検証 — レガシー現状調査フローを v0 schema で表現
 
-[migration-factory](https://github.com/KIKAIKAYA/migration-factory) の調査フローの骨子が書けることの確認
+[migration-factory](https://github.com/kikaikaya/migration-factory) の調査フローの骨子が書けることの確認
 （実物は同リポジトリの survey-unit/flow.yaml。以下は縮約版）：
 
 ```yaml
